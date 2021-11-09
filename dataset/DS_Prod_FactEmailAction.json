@@ -1,0 +1,85 @@
+{
+	"name": "DS_Prod_FactEmailAction",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_ImodDW",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlMITable",
+		"schema": [
+			{
+				"name": "SiteID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "DateKey",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "EmailId",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "EmailRecurrenceId",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "MemberId",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "OpenCount",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "DeliverCount",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "ClickCount",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "BounceCount",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "UnsubscribeCount",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "ConversionCount",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "DateCreated",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			},
+			{
+				"name": "DateUpdated",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "FactEmailAction"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

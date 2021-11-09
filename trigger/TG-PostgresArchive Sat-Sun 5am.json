@@ -1,0 +1,37 @@
+{
+	"name": "TG-PostgresArchive Sat-Sun 5am",
+	"properties": {
+		"description": "Only import in the morning on Sat & Sun.  Backup and Integrity check of Databases causes deadlocks.",
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "PL - PostgresArchive Master",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Week",
+				"interval": 1,
+				"startTime": "2021-10-01T12:36:00",
+				"timeZone": "Central Standard Time",
+				"schedule": {
+					"minutes": [
+						5
+					],
+					"hours": [
+						5
+					],
+					"weekDays": [
+						"Sunday",
+						"Saturday"
+					]
+				}
+			}
+		}
+	}
+}

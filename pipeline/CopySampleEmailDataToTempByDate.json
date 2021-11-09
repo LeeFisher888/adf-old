@@ -1,0 +1,219 @@
+{
+	"name": "CopySampleEmailDataToTempByDate",
+	"properties": {
+		"activities": [
+			{
+				"name": "For Each Date",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get Date List",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get Date List').output.Value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Copy Data To MKEmailData",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SqlMISource",
+									"sqlReaderQuery": {
+										"value": ";\nWITH\tMemberList AS\t(\n\t\t\t\t\t\tSELECT\tdm.SiteId,\n\t\t\t\t\t\t\t\tdmc.MemberId,\n\t\t\t\t\t\t\t\tdmc.ChildMemberId\n\t\t\t\t\t\tFROM\tdbo.DimMember dm\n\t\t\t\t\t\t\t\t\tJOIN \n\t\t\t\t\t\t\t\tdbo.DimMemberChild dmc\n\t\t\t\t\t\t\t\t\tON dm.SiteId = dmc.SiteId\n\t\t\t\t\t\t\t\t\t\tAND dm.MemberId = dmc.MemberId\n\t\t\t\t\t\tWHERE\t$partition.pf_DimMember(dm.SiteId) = $partition.pf_DimMember(@{pipeline().parameters.SiteId})\n\t\t\t\t\t\t\t\tAND $partition.pf_DimMemberChild(dmc.SiteId) = $partition.pf_DimMemberChild(@{pipeline().parameters.SiteId})\n\t\t\t\t\t\t\t\tAND dm.IsNonMember = 0\n\t\t\t\t\t\t\t\tAND dm.IsDeleted = 0\n\t\t\t\t\t\t\t\tAND dm.IsDeceased = 0\n\t\t\t\t\t\t\t\tAND dm.IsInternalAccount = 0\n\t\t\t\t\t\tGROUP\tBY dm.SiteId,\n\t\t\t\t\t\t\t\tdmc.ChildMemberId,\n\t\t\t\t\t\t\t\tdmc.MemberId\n\t\t\t\t\t\t),\n\t\tDeliveryList AS\t(\n\t\t\t\t\t\tSELECT\tfea.SiteId,\n\t\t\t\t\t\t\t\tfea.SubCommunityId,\n\t\t\t\t\t\t\t\tfea.EmailId,\n\t\t\t\t\t\t\t\tfea.EmailRecurrenceId,\n\t\t\t\t\t\t\t\tfea.MemberId,\n\t\t\t\t\t\t\t\tCASE WHEN SUM(fea.DeliverCount) > 0 THEN 1 ELSE 0 END AS DeliverCount,\n\t\t\t\t\t\t\t\tMIN(fea.DateKey) AS DeliverDateKey\n\t\t\t\t\t\tFROM\tdbo.FactEmailAction fea\n\t\t\t\t\t\tWHERE\t$partition.pf_FactEmailAction(fea.SiteId) = $partition.pf_FactEmailAction(@{pipeline().parameters.SiteId})\n\t\t\t\t\t\t\t\tAND fea.DateKey >= @{item().StartDateKey}\n\t\t\t\t\t\t\t\tAND fea.DateKey < @{item().EndDateKey}\n\t\t\t\t\t\t\t\tAND fea.DeliverCount > 0\n\t\t\t\t\t\tGROUP\tBY fea.SiteId,\n\t\t\t\t\t\t\t\tfea.SubCommunityId,\n\t\t\t\t\t\t\t\tfea.EmailId,\n\t\t\t\t\t\t\t\tfea.EmailRecurrenceId,\n\t\t\t\t\t\t\t\tfea.MemberId\n\t\t\t\t\t\t),\n\t\tOpenClickList AS\t(\n\t\t\t\t\t\t\tSELECT\tfea.SiteId,\n\t\t\t\t\t\t\t\t\tfea.SubCommunityId,\n\t\t\t\t\t\t\t\t\tfea.EmailId,\n\t\t\t\t\t\t\t\t\tfea.EmailRecurrenceId,\n\t\t\t\t\t\t\t\t\tfea.MemberId,\n\t\t\t\t\t\t\t\t\tCASE WHEN SUM(fea.OpenCount) > 0 OR SUM(fea.ClickCount) > 0 THEN 1 ELSE 0 END AS OpenCount,\n\t\t\t\t\t\t\t\t\tCASE WHEN SUM(fea.ClickCount) > 0 THEN 1 ELSE 0 END AS ClickCount,\n\t\t\t\t\t\t\t\t\tCASE \n\t\t\t\t\t\t\t\t\t\tWHEN \tMAX(CASE WHEN fea.OpenCount > 0 THEN DateKey ELSE 19000101 END) >= MAX(CASE WHEN fea.ClickCount > 0 THEN DateKey ELSE 19000101 END) \n\t\t\t\t\t\t\t\t\t\tTHEN \tMAX(CASE WHEN fea.OpenCount > 0 THEN DateKey ELSE NULL END)\n\t\t\t\t\t\t\t\t\t\tELSE \tMAX(CASE WHEN fea.ClickCount > 0 THEN DateKey ELSE NULL END) \n\t\t\t\t\t\t\t\t\tEND AS LastOpenDateKey,\n\t\t\t\t\t\t\t\t\tMAX(CASE WHEN fea.ClickCount > 0 THEN DateKey ELSE NULL END) AS LastClickDateKey\n\t\t\t\t\t\t\tFROM\tdbo.FactEmailAction fea\n\t\t\t\t\t\t\tWHERE\t$partition.pf_FactEmailAction(fea.SiteId) = $partition.pf_FactEmailAction(@{pipeline().parameters.SiteId})\n\t\t\t\t\t\t\t\t\tAND fea.DateKey >= @{item().StartDateKey}\n\t\t\t\t\t\t\t\t\tAND (\n\t\t\t\t\t\t\t\t\t\tfea.OpenCount > 0\n\t\t\t\t\t\t\t\t\t\tOR fea.ClickCount > 0\n\t\t\t\t\t\t\t\t\t\t)\n\t\t\t\t\t\t\tGROUP\tBY fea.SiteId,\n\t\t\t\t\t\t\t\t\tfea.SubCommunityId,\n\t\t\t\t\t\t\t\t\tfea.EmailId,\n\t\t\t\t\t\t\t\t\tfea.EmailRecurrenceId,\n\t\t\t\t\t\t\t\t\tfea.MemberId\n\t\t\t\t\t\t\t)\nSELECT\tdl.SiteId,\n\t\tdl.SubCommunityId,\n\t\tdl.EmailId,\n\t\tdl.EmailRecurrenceId,\n\t\tml.MemberId,\n\t\tSUM(dl.DeliverCount) AS DeliverCount,\n\t\tISNULL(SUM(ocl.OpenCount),0) AS OpenCount,\n\t\tISNULL(SUM(ocl.ClickCount),0) AS ClickCount,\n\t\tMIN(dl.DeliverDateKey) AS DeliverDateKey,\n\t\tMAX(ocl.LastOpenDateKey) AS LastOpenDateKey,\n\t\tMAX(ocl.LastClickDateKey) AS LastClickDateKey\nFROM\tMemberList ml\n\t\t\tJOIN \n\t\tDeliveryList dl\n\t\t\tON ml.SiteId = dl.SiteId\n\t\t\t\tAND ml.ChildMemberId = dl.MemberId\n\t\t\tLEFT JOIN\n\t\tOpenClickList ocl\n\t\t\tON dl.SiteId = ocl.SiteId\n\t\t\t\tAND dl.SubCommunityid = ocl.SubCommunityid\n\t\t\t\tAND dl.EmailId = ocl.Emailid\n\t\t\t\tAND dl.EmailRecurrenceid = ocl.EmailRecurrenceId\n\t\t\t\tAND dl.MemberId = ocl.MemberId\nGROUP\tBY dl.SiteId,\n\t\tdl.SubCommunityId,\n\t\tdl.EmailId,\n\t\tdl.EmailRecurrenceId,\n\t\tml.MemberId",
+										"type": "Expression"
+									},
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "SqlMISink",
+									"sqlWriterStoredProcedureName": "[dbo].[usp_BulkUpload_MKSampleEmailData]",
+									"sqlWriterTableType": "dbo.mk_emails",
+									"storedProcedureTableTypeParameterName": "emails"
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"mappings": [
+										{
+											"source": {
+												"name": "SiteId",
+												"type": "Int32"
+											},
+											"sink": {
+												"name": "SiteID",
+												"type": "Int32"
+											}
+										},
+										{
+											"source": {
+												"name": "SubCommunityId",
+												"type": "Int32"
+											},
+											"sink": {
+												"name": "SubCommunityId",
+												"type": "Int32"
+											}
+										},
+										{
+											"source": {
+												"name": "EmailId",
+												"type": "Int32"
+											},
+											"sink": {
+												"name": "EmailId",
+												"type": "Int32"
+											}
+										},
+										{
+											"source": {
+												"name": "EmailRecurrenceId",
+												"type": "Int32"
+											},
+											"sink": {
+												"name": "EmailRecurrenceId",
+												"type": "Int32"
+											}
+										},
+										{
+											"source": {
+												"name": "MemberId",
+												"type": "Int32"
+											},
+											"sink": {
+												"name": "MemberId",
+												"type": "Int32"
+											}
+										},
+										{
+											"source": {
+												"name": "DeliverCount",
+												"type": "Int32"
+											},
+											"sink": {
+												"name": "DeliverCount",
+												"type": "Int32"
+											}
+										},
+										{
+											"source": {
+												"name": "OpenCount",
+												"type": "Int32"
+											},
+											"sink": {
+												"name": "OpenCount",
+												"type": "Int32"
+											}
+										},
+										{
+											"source": {
+												"name": "ClickCount",
+												"type": "Int32"
+											},
+											"sink": {
+												"name": "ClickCount",
+												"type": "Int32"
+											}
+										},
+										{
+											"source": {
+												"name": "DeliverDateKey",
+												"type": "Int32"
+											},
+											"sink": {
+												"name": "DeliverDateKey",
+												"type": "Int32"
+											}
+										},
+										{
+											"source": {
+												"name": "LastOpenDateKey",
+												"type": "Int32"
+											},
+											"sink": {
+												"name": "LastOpenDatekey",
+												"type": "Int32"
+											}
+										},
+										{
+											"source": {
+												"name": "LastClickDateKey",
+												"type": "Int32"
+											},
+											"sink": {
+												"name": "LastClickDateKey",
+												"type": "Int32"
+											}
+										}
+									]
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_FactEmailAction",
+									"type": "DatasetReference"
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "MKEmailData",
+									"type": "DatasetReference"
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"name": "Get Date List",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlMISource",
+						"sqlReaderQuery": "SELECT\tdd.DateKey AS StartDateKey,\n\t\tddn.DateKey AS EndDateKey\nFROM\tdbo.DimDate dd\n\t\t\tJOIN\n        dbo.DimDate ddn\n\t\t\tON dd.FirstDayOfNextMonth = ddn.Date\nWHERE\tdd.DateKey >= 20170101\n\t\tAND dd.DateKey < 20200101\n\t\tAND dd.DAY = 1\nORDER\tBY dd.DateKey",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_MKEmailDateList",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			}
+		],
+		"parameters": {
+			"SiteId": {
+				"type": "int",
+				"defaultValue": 61
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2020-05-21T13:50:19Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

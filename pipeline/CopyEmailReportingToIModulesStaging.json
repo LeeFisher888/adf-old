@@ -1,0 +1,415 @@
+{
+	"name": "CopyEmailReportingToIModulesStaging",
+	"properties": {
+		"activities": [
+			{
+				"name": "LoopThroughEventIds",
+				"type": "Until",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@greater(1000000,activity('CopyEventsToStaging').output.rowsCopied)",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "CopyEventsToStaging",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "GetMaxEventId",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [
+								{
+									"name": "Source",
+									"value": "."
+								},
+								{
+									"name": "Destination",
+									"value": "dbo.Event"
+								}
+							],
+							"typeProperties": {
+								"source": {
+									"type": "PostgreSqlSource",
+									"query": {
+										"value": "select e.id as EventId, e.email as EmailAddress, e.event_action as EventAction, case when t.id is null then -1 else t.id end::smallint as ActionTypeId, e.event_time as EventDateTime, to_char(e.event_time, 'YYYYMMDD')::INTEGER as DateKey, extract(epoch FROM e.event_time::time)::int AS TimeKey, e.site_id as SiteId, e.sub_community_id as SubCommunityId, e.email_id as EmailId, e.email_recurrence_id as EmailRecurrenceId, e.member_id as MemberId, e.email_category as EmailCategory, e.drop_type as DropType, e.drop_status as DropStatus, e.drop_reason as DropReason, e.url as Url, e.user_agent as UserAgent, coalesce(e.ip,'') as ip, e.completed_tracking_item_name as CompletedTrackingItemName, coalesce(e.sg_event_id,'') as SgEventId from events e left join (select id, lower(action_type) as action_type from action_types) t on t.action_type = e.event_action where e.id > @{activity('GetMaxEventId').output.firstRow.MaxEventId} order by e.id limit 1000000;",
+										"type": "Expression"
+									}
+								},
+								"sink": {
+									"type": "SqlMISink",
+									"sqlWriterStoredProcedureName": "[dbo].[usp_upsert_Event]",
+									"sqlWriterTableType": "dbo.EmailEvents",
+									"storedProcedureTableTypeParameterName": "EmailEvents"
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"mappings": [
+										{
+											"source": {
+												"name": "eventid",
+												"type": "Int64"
+											},
+											"sink": {
+												"name": "EventId",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"name": "emailaddress",
+												"type": "String"
+											},
+											"sink": {
+												"name": "EmailAddress",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "eventaction",
+												"type": "String"
+											},
+											"sink": {
+												"name": "EventAction",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "actiontypeid",
+												"type": "Int16"
+											},
+											"sink": {
+												"name": "ActionTypeId",
+												"type": "Int32"
+											}
+										},
+										{
+											"source": {
+												"name": "eventdatetime",
+												"type": "DateTime"
+											},
+											"sink": {
+												"name": "EventDatetime",
+												"type": "DateTime"
+											}
+										},
+										{
+											"source": {
+												"name": "datekey",
+												"type": "Int32"
+											},
+											"sink": {
+												"name": "DateKey",
+												"type": "Int32"
+											}
+										},
+										{
+											"source": {
+												"name": "timekey",
+												"type": "Int32"
+											},
+											"sink": {
+												"name": "TimeKey",
+												"type": "Int32"
+											}
+										},
+										{
+											"source": {
+												"name": "siteid",
+												"type": "Int32"
+											},
+											"sink": {
+												"name": "SiteId",
+												"type": "Int32"
+											}
+										},
+										{
+											"source": {
+												"name": "subcommunityid",
+												"type": "Int32"
+											},
+											"sink": {
+												"name": "SubCommunityId",
+												"type": "Int32"
+											}
+										},
+										{
+											"source": {
+												"name": "emailid",
+												"type": "Int32"
+											},
+											"sink": {
+												"name": "EmailId",
+												"type": "Int32"
+											}
+										},
+										{
+											"source": {
+												"name": "emailrecurrenceid",
+												"type": "Int32"
+											},
+											"sink": {
+												"name": "EmailRecurrenceId",
+												"type": "Int32"
+											}
+										},
+										{
+											"source": {
+												"name": "memberid",
+												"type": "Int32"
+											},
+											"sink": {
+												"name": "MemberId",
+												"type": "Int32"
+											}
+										},
+										{
+											"source": {
+												"name": "emailcategory",
+												"type": "String"
+											},
+											"sink": {
+												"name": "EmailCategory",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "droptype",
+												"type": "String"
+											},
+											"sink": {
+												"name": "DropType",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "dropstatus",
+												"type": "String"
+											},
+											"sink": {
+												"name": "DropStatus",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "dropreason",
+												"type": "String"
+											},
+											"sink": {
+												"name": "DropReason",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "url",
+												"type": "String"
+											},
+											"sink": {
+												"name": "Url",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "useragent",
+												"type": "String"
+											},
+											"sink": {
+												"name": "UserAgent",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "ip",
+												"type": "String"
+											},
+											"sink": {
+												"name": "ip",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "completedtrackingitemname",
+												"type": "String"
+											},
+											"sink": {
+												"name": "CompletedTrackingItemName",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "sgeventid",
+												"type": "String"
+											},
+											"sink": {
+												"name": "SgEventId",
+												"type": "String"
+											}
+										}
+									]
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_EmailReporting",
+									"type": "DatasetReference"
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_Stage_Event",
+									"type": "DatasetReference"
+								}
+							]
+						},
+						{
+							"name": "GetMaxEventId",
+							"type": "Lookup",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SqlMISource",
+									"sqlReaderQuery": "SELECT\tMAX(EventId) as MaxEventId\nFROM\tMaxEventId",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "DS_iModulesStaging",
+									"type": "DatasetReference"
+								},
+								"firstRowOnly": true
+							}
+						},
+						{
+							"name": "CopyMaxEventId",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "CopyEventsToStaging",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SqlMISource",
+									"sqlReaderQuery": "SELECT\tMAX(A.pmx) AS EventId\nFROM\tsys.partitions AS P\n\t\t\tCROSS APPLY \n\t\t( \n\t\tSELECT\tMAX(Event.EventId) AS pmx\n\t\tFROM\tdbo.Event\n\t\tWHERE\t$PARTITION.pf_Event(Event.SiteId) = P.partition_number \n\t\t) AS A\nWHERE\tP.object_id = OBJECT_ID('dbo.Event')\n\t\tAND P.index_id = INDEXPROPERTY( OBJECT_ID('dbo.Event'), 'ux_event_EventId', 'IndexID' );",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "SqlMISink"
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"mappings": [
+										{
+											"source": {
+												"name": "EventId",
+												"type": "Int64"
+											},
+											"sink": {
+												"name": "EventId",
+												"type": "Int64"
+											}
+										}
+									]
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_iModulesStaging",
+									"type": "DatasetReference"
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_Stage_MaxEventId",
+									"type": "DatasetReference"
+								}
+							]
+						}
+					],
+					"timeout": "7.00:00:00"
+				}
+			},
+			{
+				"name": "Send Failure Email",
+				"description": "Send Failure Email",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "LoopThroughEventIds",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"url": "https://prod-08.eastus2.logic.azure.com:443/workflows/223f93ee2ab8417fa3e64f49a0559ee7/triggers/request/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Frequest%2Frun&sv=1.0&sig=Tdvydpd_wH-15KPWeXPS4W-JVm9Q5eefCQQhZJVJlBc",
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application\\json"
+					},
+					"body": {
+						"DataFactoryName": "@{pipeline().DataFactory}",
+						"PipelineName": "@{pipeline().Pipeline}",
+						"Subject": "An error has occurred!",
+						"ErrorMessage": "The ADF pipeline has crashed! Please check the logs.",
+						"EmailTo": "govermoyer@imodules.com;lfisher@imodules.com;echristiansen@imodules.com"
+					}
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2020-04-27T14:50:15Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

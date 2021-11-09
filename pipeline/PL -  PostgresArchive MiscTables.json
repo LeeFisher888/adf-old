@@ -1,0 +1,993 @@
+{
+	"name": "PL -  PostgresArchive MiscTables",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get variant_set LastUpdated",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlServerSource",
+						"sqlReaderQuery": {
+							"value": "select Convert(smalldatetime, isnull(max(last_updated), '1900-01-01')) as MinVSLastUpdated from variant_sets\n",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_UsEmRptArchive",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "Copy variant_sets to staging table",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Get variant_set LastUpdated",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "PostgreSqlSource",
+						"query": {
+							"value": "SELECT\tid, \n\t\tsite_id, \n\t\tsub_community_id, \n\t\texternal_variant_set_id, \n\t\tset_name, \n\t\tdate_added::timestamp, \n\t\tlast_updated::timestamp, \n\t\tmessage_source, \n\t\tcampaign_type, \n\t\tis_prioritized\nFROM public.variant_sets\nWHERE last_updated >=  '@{activity('Get variant_set LastUpdated').output.firstRow.MinVSLastUpdated}' \norder by id",
+							"type": "Expression"
+						}
+					},
+					"sink": {
+						"type": "SqlServerSink",
+						"preCopyScript": "truncate table dbo.stage_variant_sets"
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "id",
+									"type": "Int64"
+								},
+								"sink": {
+									"name": "id",
+									"type": "Int64",
+									"physicalType": "bigint"
+								}
+							},
+							{
+								"source": {
+									"name": "site_id",
+									"type": "Int32"
+								},
+								"sink": {
+									"name": "site_id",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "sub_community_id",
+									"type": "Int32"
+								},
+								"sink": {
+									"name": "sub_community_id",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "external_variant_set_id",
+									"type": "Int64"
+								},
+								"sink": {
+									"name": "external_variant_set_id",
+									"type": "Int64",
+									"physicalType": "bigint"
+								}
+							},
+							{
+								"source": {
+									"name": "set_name",
+									"type": "String"
+								},
+								"sink": {
+									"name": "set_name",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "date_added",
+									"type": "DateTime"
+								},
+								"sink": {
+									"name": "date_added",
+									"type": "DateTime",
+									"physicalType": "datetime2"
+								}
+							},
+							{
+								"source": {
+									"name": "last_updated",
+									"type": "DateTime"
+								},
+								"sink": {
+									"name": "last_updated",
+									"type": "DateTime",
+									"physicalType": "datetime2"
+								}
+							},
+							{
+								"source": {
+									"name": "message_source",
+									"type": "Int32"
+								},
+								"sink": {
+									"name": "message_source",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "DS_EmailReporting",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DS_UsEmRptArchive_variant_sets",
+						"type": "DatasetReference"
+					}
+				]
+			},
+			{
+				"name": "Get Link_metrics last_updated",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlServerSource",
+						"sqlReaderQuery": {
+							"value": "select Convert(smalldatetime, isnull(max(last_updated), '1900-01-01')) as LastUpdated from link_metrics\n",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_UsEmRptArchive",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "Copy link_metrics to staging table",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Get Link_metrics last_updated",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "PostgreSqlSource",
+						"query": {
+							"value": "SELECT\tid, \n\t\tdate_added::timestamp, \n\t\tmessage_id, \n\t\texternal_link_id, \n\t\turl, \n\t\tinitial_clicks, \n\t\ttotal_clicks, \n\t\tlink_name, \n\t\tlast_updated::timestamp, \n\t\tunique_clicks\nFROM public.link_metrics\nWHERE last_updated >= '@{activity('Get Link_metrics last_updated').output.firstRow.LastUpdated}'\nORDER BY id",
+							"type": "Expression"
+						}
+					},
+					"sink": {
+						"type": "SqlServerSink",
+						"preCopyScript": "truncate table dbo.stage_link_metrics"
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "id",
+									"type": "Int64"
+								},
+								"sink": {
+									"name": "id",
+									"type": "Int64",
+									"physicalType": "bigint"
+								}
+							},
+							{
+								"source": {
+									"name": "date_added",
+									"type": "DateTime"
+								},
+								"sink": {
+									"name": "date_added",
+									"type": "DateTime",
+									"physicalType": "datetime2"
+								}
+							},
+							{
+								"source": {
+									"name": "message_id",
+									"type": "Int64"
+								},
+								"sink": {
+									"name": "message_id",
+									"type": "Int64",
+									"physicalType": "bigint"
+								}
+							},
+							{
+								"source": {
+									"name": "external_link_id",
+									"type": "Int32"
+								},
+								"sink": {
+									"name": "external_link_id",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "url",
+									"type": "String"
+								},
+								"sink": {
+									"name": "url",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "initial_clicks",
+									"type": "Int32"
+								},
+								"sink": {
+									"name": "initial_clicks",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "total_clicks",
+									"type": "Int32"
+								},
+								"sink": {
+									"name": "total_clicks",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "link_name",
+									"type": "String"
+								},
+								"sink": {
+									"name": "link_name",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "last_updated",
+									"type": "DateTime"
+								},
+								"sink": {
+									"name": "last_updated",
+									"type": "DateTime",
+									"physicalType": "datetime2"
+								}
+							},
+							{
+								"source": {
+									"name": "unique_clicks",
+									"type": "Int32"
+								},
+								"sink": {
+									"name": "unique_clicks",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "DS_EmailReporting",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DS_UsEmRptArchive_link_metrics",
+						"type": "DatasetReference"
+					}
+				]
+			},
+			{
+				"name": "usp_merge_variant_sets",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Copy variant_sets to staging table",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[dbo].[usp_merge_variant_sets]"
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_EmRptArhive",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "usp_merge_link_metrics",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Copy link_metrics to staging table",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[dbo].[usp_merge_link_metrics]"
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_EmRptArhive",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Get Recipients last_updated",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlServerSource",
+						"sqlReaderQuery": {
+							"value": "select Convert(smalldatetime, isnull(max(last_updated), '1900-01-01')) as LastUpdated from recipients\n",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_UsEmRptArchive",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "Copy recipients to staging table",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Get Recipients last_updated",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "PostgreSqlSource",
+						"query": {
+							"value": "SELECT \n\tid, \n\tconstituent_id, \n\tsite_id, \n\tmember_id, \n\temail, \n\tfirst_name, \n\tlast_name, \n\tclass_year, \n\tdate_added::timestamp, \n\tlast_updated::timestamp\nFROM public.recipients\nwhere last_updated >= '@{activity('Get Recipients last_updated').output.firstRow.LastUpdated}'\norder by id\n",
+							"type": "Expression"
+						}
+					},
+					"sink": {
+						"type": "SqlServerSink",
+						"preCopyScript": "truncate table dbo.stage_recipients"
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "id",
+									"type": "Int64"
+								},
+								"sink": {
+									"name": "id",
+									"type": "Int64",
+									"physicalType": "bigint"
+								}
+							},
+							{
+								"source": {
+									"name": "constituent_id",
+									"type": "String"
+								},
+								"sink": {
+									"name": "constituent_id",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "site_id",
+									"type": "Int32"
+								},
+								"sink": {
+									"name": "site_id",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "member_id",
+									"type": "Int32"
+								},
+								"sink": {
+									"name": "member_id",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "email",
+									"type": "String"
+								},
+								"sink": {
+									"name": "email",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "first_name",
+									"type": "String"
+								},
+								"sink": {
+									"name": "first_name",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "last_name",
+									"type": "String"
+								},
+								"sink": {
+									"name": "last_name",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "class_year",
+									"type": "Int16"
+								},
+								"sink": {
+									"name": "class_year",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "date_added",
+									"type": "DateTime"
+								},
+								"sink": {
+									"name": "date_added",
+									"type": "DateTime",
+									"physicalType": "datetime2"
+								}
+							},
+							{
+								"source": {
+									"name": "last_updated",
+									"type": "DateTime"
+								},
+								"sink": {
+									"name": "last_updated",
+									"type": "DateTime",
+									"physicalType": "datetime2"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "DS_EmailReporting",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DS_UsEmRptArchive_recipients",
+						"type": "DatasetReference"
+					}
+				]
+			},
+			{
+				"name": "trunacate_stage_variant_sets",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "usp_merge_variant_sets",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[dbo].[usp_trunacate_stage_variant_sets]"
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_EmRptArhive",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "truncate stage_link_metrics",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "usp_merge_link_metrics",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[dbo].[usp_trunacate_stage_link_metrics]"
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_EmRptArhive",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "usp_merge_recipients",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Copy recipients to staging table",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[dbo].[usp_merge_recipients]"
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_EmRptArhive",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Truncate stage_recipients",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "usp_merge_recipients",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[dbo].[usp_trunacate_stage_recipients]"
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_EmRptArhive",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Get Messages MaxId",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlServerSource",
+						"sqlReaderQuery": {
+							"value": "select max(id) as MaxId from dbo.messages\n",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_UsEmRptArchive",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "Copy messages to staging table",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Get Messages MaxId",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "PostgreSqlSource",
+						"query": {
+							"value": "SELECT \tid, \n\t\tdate_added::timestamp, \n\t\tscheduled_date::timestamp, \n\t\temail_name, \n\t\tfrom_name, \n\t\tfrom_address, \n\t\tsubject_line, \n\t\tpre_header, \n\t\tcategory_name, \n\t\tsite_id, \n\t\tsub_community_id, \n\t\temail_id, \n\t\temail_recurrence_id, \n\t\tactual_send_timestamp::timestamp, \n\t\tsent_count, \n\t\tis_populated, \n\t\tmessage_source, \n\t\tvariant_set_id\nFROM public.messages\nWHERE id > @{activity('Get Messages MaxId').output.firstrow.MaxId}\norder by id ",
+							"type": "Expression"
+						}
+					},
+					"sink": {
+						"type": "SqlServerSink",
+						"preCopyScript": "TRUNCATE TABLE [dbo].[stage_messages]"
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "DS_EmailReporting",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DS_UsEmRptArchive_stage_messages",
+						"type": "DatasetReference"
+					}
+				]
+			},
+			{
+				"name": "usp_merge_messages",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Copy messages to staging table",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[dbo].[usp_merge_messages]"
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_EmRptArhive",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Truncate stage_messages",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "usp_merge_messages",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[dbo].[usp_trunacate_stage_messages]"
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_EmRptArhive",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Copy action_types to stage",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "PostgreSqlSource",
+						"query": {
+							"value": "SELECT action_type, id\nFROM public.action_types\nOrder by id",
+							"type": "Expression"
+						}
+					},
+					"sink": {
+						"type": "SqlServerSink",
+						"preCopyScript": "Truncate table dbo.stage_action_types"
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "id",
+									"type": "Int16"
+								},
+								"sink": {
+									"name": "id",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "action_type",
+									"type": "String"
+								},
+								"sink": {
+									"name": "action_type",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "DS_EmailReporting",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DS_UsEmRptArchive_action_types",
+						"type": "DatasetReference"
+					}
+				]
+			},
+			{
+				"name": "usp_merge_action_types",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Copy action_types to stage",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[dbo].[usp_merge_action_types]"
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_EmRptArhive",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "usp_trunacate_stage_action_types",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "usp_merge_action_types",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[dbo].[usp_trunacate_stage_action_types]"
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_EmRptArhive",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2021-10-11T19:21:19Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

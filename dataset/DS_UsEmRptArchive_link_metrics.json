@@ -1,0 +1,71 @@
+{
+	"name": "DS_UsEmRptArchive_link_metrics",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_EmRptArhive",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "SqlServerTable",
+		"schema": [
+			{
+				"name": "pid",
+				"type": "bigint",
+				"precision": 19
+			},
+			{
+				"name": "id",
+				"type": "bigint",
+				"precision": 19
+			},
+			{
+				"name": "date_added",
+				"type": "datetime2",
+				"scale": 7
+			},
+			{
+				"name": "message_id",
+				"type": "bigint",
+				"precision": 19
+			},
+			{
+				"name": "external_link_id",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "url",
+				"type": "nvarchar"
+			},
+			{
+				"name": "initial_clicks",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "total_clicks",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "link_name",
+				"type": "nvarchar"
+			},
+			{
+				"name": "last_updated",
+				"type": "datetime2",
+				"scale": 7
+			},
+			{
+				"name": "unique_clicks",
+				"type": "int",
+				"precision": 10
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "stage_link_metrics"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

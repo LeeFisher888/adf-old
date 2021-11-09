@@ -1,0 +1,23 @@
+{
+	"name": "DS_Stage_MaxEventId",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_iModulesStaging",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlMITable",
+		"schema": [
+			{
+				"name": "EventId",
+				"type": "bigint",
+				"precision": 19
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "MaxEventId"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

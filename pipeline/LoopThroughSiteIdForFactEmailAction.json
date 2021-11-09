@@ -1,0 +1,115 @@
+{
+	"name": "LoopThroughSiteIdForFactEmailAction",
+	"properties": {
+		"description": "SiteId loop to execute CopyEventToFactEmail pipeline",
+		"activities": [
+			{
+				"name": "GetSiteList",
+				"description": "Get SiteId list from DimSite",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlMISource",
+						"sqlReaderQuery": "SELECT\tSiteId\nFROM\tdbo.DimSite\nWHERE    SiteId >= 1210\n--WHERE\tSiteId NOT IN (100,1013,1043,1049,1059,1064,1068,1069,1092,1096,1110,1119,1133,1170,1187,1192,1203,1225,1251,1253,1264,1266,1269,1322,1347,1356,1374,1378,1380,1395,1410,1422,1425,1434,1438,1442,1481,1485,1489,1492,1496,1512,1516,1523,1530,1531,1537,154,1540,1548,1549,1556,1564,1565,1570,158,1586,1587,1612,1618,1622,1624,1628,1632,1637,1648,1649,1654,1655,1660,1665,1672,1683,1685,1686,1692,1697,1699,1710,1714,1720,1728,1729,1761,1763,1785,1798,1816,1833,1841,1858,1862,1863,1864,1872,1880,1894,1899,1905,1907,203,260,286,344,390,565,61,62,647,749,808,81,831,832,861,871,894,947,960,995,999,1210)\n\t\t--AND SiteId > 1801\nORDER\tBY SiteId",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_iModDW",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "LoopThroughSiteId",
+				"description": "Loop through SiteIds in site list",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "GetSiteList",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('GetSiteList').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "ExecuteCopyEventToFactEmailAction",
+							"description": "Execute CopyEventToFactEmailAction pipeline for all SiteIds in DimSite",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "CopyEventToFactEmailAction",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"SiteId": {
+										"value": "@item().SiteId",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Send Failure Email",
+				"description": "Send failure email",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "LoopThroughSiteId",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"url": "https://prod-08.eastus2.logic.azure.com:443/workflows/223f93ee2ab8417fa3e64f49a0559ee7/triggers/request/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Frequest%2Frun&sv=1.0&sig=Tdvydpd_wH-15KPWeXPS4W-JVm9Q5eefCQQhZJVJlBc",
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/json"
+					},
+					"body": {
+						"DataFactoryName": "@{pipeline().DataFactory}",
+						"PipelineName": "@{pipeline().Pipeline}",
+						"Subject": "An error has occurred!",
+						"ErrorMessage": "The ADF pipeline has crashed! Please check the logs.",
+						"EmailTo": "govermoyer@imodules.com;lfisher@imodules.com;echristiansen@imodules.com"
+					}
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2020-06-03T18:22:12Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

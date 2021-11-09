@@ -1,0 +1,13 @@
+{
+	"name": "DS_UsEmRptArchive",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_EmRptArhive",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "SqlServerTable",
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

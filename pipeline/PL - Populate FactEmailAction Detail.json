@@ -1,0 +1,358 @@
+{
+	"name": "PL - Populate FactEmailAction Detail",
+	"properties": {
+		"description": "Copy EmailReporting to FactEmailAction by SiteId",
+		"activities": [
+			{
+				"name": "Copy Events to FactEmailAction",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Get Max Email Id",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 5,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "PostgreSqlSource",
+						"query": {
+							"value": "SELECT e.site_id as SiteId,\n\t\t   e.sub_community_id as SubCommunityId,\n       to_char(e.event_time, 'YYYYMMDD') :: INTEGER as DateKey,\n       e.email_id as EmailId,\n       e.email_recurrence_id as EmailRecurrenceId,\n       e.member_id as MemberId,\n       SUM(CASE WHEN t.id = 7 THEN 1 ELSE 0 END) AS OpenCount,\n       SUM(CASE WHEN t.id = 4 THEN 1 ELSE 0 END) AS DeliverCount,\n       SUM(CASE WHEN t.id = 8 THEN 1 ELSE 0 END) AS ClickCount,\n       SUM(CASE WHEN t.id = 6 THEN 1 ELSE 0 END) AS BounceCount,\n       SUM(CASE WHEN t.id = 10 THEN 1 ELSE 0 END) AS UnsubscribeCount,\n       SUM(CASE WHEN t.id = -1 AND e.event_action = 'conversion' THEN 1 ELSE 0 END) AS ConversionCount,\n\t\t   now()::DATE as DateCreated,\n\t\t   now()::DATE AS DateUpdated\nFROM   events e\n              left join\n\t\t\t (\n\t\t\t select id,\n\t\t\t\t\t\t\tlower(action_type) as action_type\n\t\t\t from \taction_types\n\t\t\t ) t\n              on t.action_type = e.event_action\nwhere  e.id > @{activity('Get Min Email Id').output.FirstRow.MinEmailId}\n\t\t\t and e.id <= @{activity('Get Max Email Id').output.FirstRow.MaxEmailId}\n       and e.site_id = @{pipeline().parameters.SiteId}\nGROUP  BY e.site_id,\n\t\t   e.sub_community_id,\n       to_char(e.event_time, 'YYYYMMDD') :: INTEGER,\n       e.email_id,\n       e.email_recurrence_id,\n       e.member_id\nORDER  BY e.site_id,\n\t\t   e.sub_community_id,\n       to_char(e.event_time, 'YYYYMMDD') :: INTEGER,\n       e.email_id,\n       e.email_recurrence_id,\n       e.member_id;",
+							"type": "Expression"
+						}
+					},
+					"sink": {
+						"type": "SqlMISink",
+						"sqlWriterStoredProcedureName": "[dbo].[usp_BulkUpload_FactEmailAction]",
+						"sqlWriterTableType": "dbo.emails",
+						"storedProcedureTableTypeParameterName": "emails"
+					},
+					"enableStaging": false,
+					"parallelCopies": 4,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "siteid",
+									"type": "Int32"
+								},
+								"sink": {
+									"name": "SiteID",
+									"type": "Int32"
+								}
+							},
+							{
+								"source": {
+									"name": "subcommunityid",
+									"type": "Int32"
+								},
+								"sink": {
+									"name": "SubCommunityId",
+									"type": "Int32"
+								}
+							},
+							{
+								"source": {
+									"name": "datekey",
+									"type": "Int32"
+								},
+								"sink": {
+									"name": "DateKey",
+									"type": "Int32"
+								}
+							},
+							{
+								"source": {
+									"name": "emailid",
+									"type": "Int32"
+								},
+								"sink": {
+									"name": "EmailId",
+									"type": "Int32"
+								}
+							},
+							{
+								"source": {
+									"name": "emailrecurrenceid",
+									"type": "Int32"
+								},
+								"sink": {
+									"name": "EmailRecurrenceId",
+									"type": "Int32"
+								}
+							},
+							{
+								"source": {
+									"name": "memberid",
+									"type": "Int32"
+								},
+								"sink": {
+									"name": "MemberId",
+									"type": "Int32"
+								}
+							},
+							{
+								"source": {
+									"name": "opencount",
+									"type": "Int64"
+								},
+								"sink": {
+									"name": "OpenCount",
+									"type": "Int32"
+								}
+							},
+							{
+								"source": {
+									"name": "delivercount",
+									"type": "Int64"
+								},
+								"sink": {
+									"name": "DeliverCount",
+									"type": "Int32"
+								}
+							},
+							{
+								"source": {
+									"name": "clickcount",
+									"type": "Int64"
+								},
+								"sink": {
+									"name": "ClickCount",
+									"type": "Int32"
+								}
+							},
+							{
+								"source": {
+									"name": "bouncecount",
+									"type": "Int64"
+								},
+								"sink": {
+									"name": "BounceCount",
+									"type": "Int32"
+								}
+							},
+							{
+								"source": {
+									"name": "unsubscribecount",
+									"type": "Int64"
+								},
+								"sink": {
+									"name": "UnsubscribeCount",
+									"type": "Int32"
+								}
+							},
+							{
+								"source": {
+									"name": "conversioncount",
+									"type": "Int64"
+								},
+								"sink": {
+									"name": "ConversionCount",
+									"type": "Int32"
+								}
+							},
+							{
+								"source": {
+									"name": "datecreated",
+									"type": "DateTime"
+								},
+								"sink": {
+									"name": "DateCreated",
+									"type": "DateTime"
+								}
+							},
+							{
+								"source": {
+									"name": "dateupdated",
+									"type": "DateTime"
+								},
+								"sink": {
+									"name": "DateUpdated",
+									"type": "DateTime"
+								}
+							}
+						]
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "DS_EmailReportingBySite",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DS_FactEmailAction",
+						"type": "DatasetReference"
+					}
+				]
+			},
+			{
+				"name": "Get Max Email Id",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Get Min Email Id",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 5,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "PostgreSqlSource",
+						"query": {
+							"value": "select COALESCE(CAST(max(id) as BIGINT),0) as MaxEmailId\nfrom events\nwhere site_id = @{pipeline().parameters.SiteId}\n  AND event_time <= date_trunc('hour',now() at time zone 'cst')",
+							"type": "Expression"
+						}
+					},
+					"dataset": {
+						"referenceName": "DS_MaxEmailId",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": true
+				}
+			},
+			{
+				"name": "Get Min Email Id",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlMISource",
+						"sqlReaderQuery": {
+							"value": "SELECT\tCAST(ISNULL(MAX(EventId),0) AS BIGINT) AS MinEmailId\nFROM\tdbo.StageEmailMaxId\nWHERE\tSiteId = @{pipeline().parameters.SiteId}",
+							"type": "Expression"
+						},
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_MinEmailId",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": true
+				}
+			},
+			{
+				"name": "Update StageMaxEmailId",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Copy Events to FactEmailAction",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlMISource",
+						"sqlReaderQuery": {
+							"value": "select @{pipeline().parameters.SiteId} as SiteId,\nCAST(@{activity('Get Max Email Id').output.FirstRow.MaxEmailId} AS BIGINT) as MaxEmailId,\nGETDATE() as DateUpdated",
+							"type": "Expression"
+						},
+						"partitionOption": "None"
+					},
+					"sink": {
+						"type": "SqlMISink",
+						"preCopyScript": {
+							"value": "DELETE\t\nFROM\tdbo.StageEmailMaxId\nWHERE    SiteId = @{pipeline().parameters.SiteId}",
+							"type": "Expression"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "SiteId",
+									"type": "Int32"
+								},
+								"sink": {
+									"name": "SiteId",
+									"type": "Int32"
+								}
+							},
+							{
+								"source": {
+									"name": "MaxEmailId",
+									"type": "Int64"
+								},
+								"sink": {
+									"name": "EventId",
+									"type": "Int64"
+								}
+							},
+							{
+								"source": {
+									"name": "DateUpdated",
+									"type": "DateTime"
+								},
+								"sink": {
+									"name": "DateUpdated",
+									"type": "DateTime"
+								}
+							}
+						]
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "DS_NewMaxEmailId",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DS_Prod_StageEmailMaxId",
+						"type": "DatasetReference"
+					}
+				]
+			}
+		],
+		"parameters": {
+			"SiteId": {
+				"type": "int",
+				"defaultValue": 61
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2020-06-30T19:47:33Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

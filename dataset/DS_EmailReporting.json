@@ -1,0 +1,13 @@
+{
+	"name": "DS_EmailReporting",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_EmailReporting",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "PostgreSqlTable",
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

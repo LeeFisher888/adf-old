@@ -1,0 +1,27 @@
+{
+	"name": "DS_UsEmRptArchive_action_types",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_EmRptArhive",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "SqlServerTable",
+		"schema": [
+			{
+				"name": "id",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "action_type",
+				"type": "nvarchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "stage_action_types"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

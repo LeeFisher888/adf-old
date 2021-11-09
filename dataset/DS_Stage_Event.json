@@ -1,0 +1,113 @@
+{
+	"name": "DS_Stage_Event",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_iModulesStaging",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlMITable",
+		"schema": [
+			{
+				"name": "EventId",
+				"type": "bigint",
+				"precision": 19
+			},
+			{
+				"name": "EmailAddress",
+				"type": "varchar"
+			},
+			{
+				"name": "EventAction",
+				"type": "varchar"
+			},
+			{
+				"name": "ActionTypeId",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "EventDatetime",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			},
+			{
+				"name": "DateKey",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "TimeKey",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "SiteId",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "SubCommunityId",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "EmailId",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "EmailRecurrenceId",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "MemberId",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "EmailCategory",
+				"type": "varchar"
+			},
+			{
+				"name": "DropType",
+				"type": "varchar"
+			},
+			{
+				"name": "DropStatus",
+				"type": "varchar"
+			},
+			{
+				"name": "DropReason",
+				"type": "varchar"
+			},
+			{
+				"name": "Url",
+				"type": "varchar"
+			},
+			{
+				"name": "UserAgent",
+				"type": "varchar"
+			},
+			{
+				"name": "ip",
+				"type": "varchar"
+			},
+			{
+				"name": "CompletedTrackingItemName",
+				"type": "varchar"
+			},
+			{
+				"name": "SgEventId",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "Event"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

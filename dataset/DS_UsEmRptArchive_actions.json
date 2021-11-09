@@ -1,0 +1,73 @@
+{
+	"name": "DS_UsEmRptArchive_actions",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_EmRptArhive",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "SqlServerTable",
+		"schema": [
+			{
+				"name": "pid",
+				"type": "bigint",
+				"precision": 19
+			},
+			{
+				"name": "id",
+				"type": "bigint",
+				"precision": 19
+			},
+			{
+				"name": "date_added",
+				"type": "datetime2",
+				"scale": 7
+			},
+			{
+				"name": "action_type_id",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "recipient_id",
+				"type": "bigint",
+				"precision": 19
+			},
+			{
+				"name": "message_id",
+				"type": "bigint",
+				"precision": 19
+			},
+			{
+				"name": "event_id",
+				"type": "bigint",
+				"precision": 19
+			},
+			{
+				"name": "link_id",
+				"type": "bigint",
+				"precision": 19
+			},
+			{
+				"name": "site_id",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "sub_community_id",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "event_time",
+				"type": "datetime2",
+				"scale": 7
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "stage_actions"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

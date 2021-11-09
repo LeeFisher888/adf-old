@@ -1,0 +1,62 @@
+{
+	"name": "DS_UsEmRptArchive_variant_sets",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_EmRptArhive",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "SqlServerTable",
+		"schema": [
+			{
+				"name": "pid",
+				"type": "bigint",
+				"precision": 19
+			},
+			{
+				"name": "id",
+				"type": "bigint",
+				"precision": 19
+			},
+			{
+				"name": "site_id",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "sub_community_id",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "external_variant_set_id",
+				"type": "bigint",
+				"precision": 19
+			},
+			{
+				"name": "set_name",
+				"type": "nvarchar"
+			},
+			{
+				"name": "date_added",
+				"type": "datetime2",
+				"scale": 7
+			},
+			{
+				"name": "last_updated",
+				"type": "datetime2",
+				"scale": 7
+			},
+			{
+				"name": "message_source",
+				"type": "int",
+				"precision": 10
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "stage_variant_sets"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

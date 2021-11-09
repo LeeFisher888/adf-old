@@ -1,0 +1,165 @@
+{
+	"name": "LoadMKSampleEmailData2",
+	"properties": {
+		"description": "Load MKSampleEmailData2",
+		"activities": [
+			{
+				"name": "Get Site List",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlMISource",
+						"sqlReaderQuery": "SELECT\tSiteId\nFROM\tdbo.DimSite\nWHERE\tSiteId IN (100,1013,1043,1049,1059,1064,1068,1069,1092,1096,1110,1119,1133,1170,1187,1192,1210,1225,1251,1253,1264,1266,1269,1322,1347,1356,1374,1378,1380,1395,1410,1422,1425,1434,1438,1442,1481,1485,1489,1492,1496,1512,1516,1523,1530,1531,1537,154,1540,1548,1549,1556,1564,1565,1570,158,1586,1587,1612,1618,1622,1624,1628,1632,1637,1648,1649,1654,1655,1660,1665,1672,1683,1685,1686,1692,1697,1699,1710,1714,1720,1728,1729,1761,1763,1785,1798,1816,1833,1841,1858,1862,1863,1864,1872,1880,1894,1899,1905,1907,203,260,286,344,390,565,61,62,647,749,808,81,831,832,861,871,894,947,960,995,999)\nORDER\tBY SiteId",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_MKSample_SiteList",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "Loop Through Sites",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get Site List",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get Site List').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Copy to MKSampleEmailData2",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SqlMISource",
+									"sqlReaderQuery": {
+										"value": "IF\tOBJECT_ID('tempdb..#MemberList') IS NOT NULL\n\tDROP TABLE #MemberList\n\nCREATE TABLE #MemberList\t(\n\t\t\t\t\t\t\tSiteId int,\n\t\t\t\t\t\t\tMemberId int ,\n\t\t\t\t\t\t\tChildMemberId INT,\n\t\t\t\t\t\t\tPRIMARY KEY(SiteId, ChildMemberId, MemberId)\n\t\t\t\t\t\t\t)\n\nINSERT INTO #MemberList\t(\n\t\t\t\t\t\tSiteId,\n\t\t\t\t\t\tMemberId,\n\t\t\t\t\t\tChildMemberId\n\t\t\t\t\t\t)\nSELECT\tdm.SiteId,\n\t\tdmc.MemberId,\n\t\tdmc.ChildMemberId\nFROM\tdbo.DimMember dm\n\t\t\tJOIN \n\t\tdbo.DimMemberChild dmc\n\t\t\tON dm.SiteId = dmc.SiteId\n\t\t\t\tAND dm.MemberId = dmc.MemberId\nWHERE\t$partition.pf_DimMember(dm.SiteId) = $partition.pf_DimMember(@{item().SiteId})\n\t\tAND dm.IsNonMember = 0\n\t\tAND dm.IsDeleted = 0\n\t\tAND dm.IsDeceased = 0\n\t\tAND dm.IsInternalAccount = 0\nGROUP\tBY dm.SiteId, \n\t\tdmc.ChildMemberId, \n\t\tdmc.MemberId\n\nIF\tOBJECT_ID('tempdb..#DeliveryList') IS NOT NULL\n\tDROP TABLE #DeliveryList\n\nCREATE TABLE #DeliveryList\t(\n\t\t\t\t\t\t\tSiteId INT,\n\t\t\t\t\t\t\tEmailId INT,\n\t\t\t\t\t\t\tEmailRecurrenceId INT,\n\t\t\t\t\t\t\tMemberId INT,\n\t\t\t\t\t\t\tChildMemberId INT,\n\t\t\t\t\t\t\tDeliverCount INT,\n\t\t\t\t\t\t\tPRIMARY KEY(SiteId,EmailId,EmailRecurrenceId,ChildMemberId,MemberId)\n\t\t\t\t\t\t\t)\n\nINSERT\tINTO #DeliveryList\t(\n\t\t\t\t\t\t\tSiteId,\n\t\t\t\t\t\t\tEmailId,\n\t\t\t\t\t\t\tEmailRecurrenceId,\n\t\t\t\t\t\t\tMemberId,\n\t\t\t\t\t\t\tChildMemberId,\n\t\t\t\t\t\t\tDeliverCount\n\t\t\t\t\t\t\t)\nSELECT\tfea.SiteId,\n\t\tfea.EmailId,\n\t\tfea.EmailRecurrenceId,\n\t\tml.MemberId,\n\t\tml.ChildMemberId,\n\t\tCASE WHEN SUM(fea.DeliverCount) > 0 THEN 1 ELSE 0 END AS DeliverCount\nFROM\t#MemberList ml\n\t\t\tJOIN \n\t\tdbo.FactEmailAction fea\n\t\t\tON ml.SiteId = fea.SiteId\n\t\t\t\tAND ml.ChildMemberId = fea.MemberId\nWHERE\t$partition.pf_FactEmailAction(fea.SiteId) = $partition.pf_FactEmailAction(@{item().SiteId})\n\t\tAND fea.DateKey >= 20170101\n\t\tAND fea.DateKey < 20200101\n\t\tAND fea.DeliverCount > 0\nGROUP\tBY fea.SiteId,\n\t\tfea.EmailId,\n\t\tfea.EmailRecurrenceId,\n\t\tml.MemberId,\n\t\tml.ChildMemberId\n\nIF\tOBJECT_ID('tempdb..#OpenClickList') IS NOT NULL\n\tDROP TABLE #OpenClickList\n\nCREATE TABLE #OpenClickList\t(\n\t\t\t\t\t\t\tSiteId INT,\n\t\t\t\t\t\t\tEmailId INT,\n\t\t\t\t\t\t\tEmailRecurrenceId INT,\n\t\t\t\t\t\t\tMemberId INT,\n\t\t\t\t\t\t\tOpenCount INT,\n\t\t\t\t\t\t\tClickCount INT,\n\t\t\t\t\t\t\tLastOpenDateKey INT,\n\t\t\t\t\t\t\tLastClickDateKey INT,\n\t\t\t\t\t\t\tPRIMARY KEY(SiteId,EmailId,EmailRecurrenceId,MemberId)\n\t\t\t\t\t\t\t)\n\nINSERT\tINTO #OpenClickList\t(\n\t\t\t\t\t\t\tSiteId,\n\t\t\t\t\t\t\tEmailId,\n\t\t\t\t\t\t\tEmailRecurrenceId,\n\t\t\t\t\t\t\tMemberId,\n\t\t\t\t\t\t\tOpenCount,\n\t\t\t\t\t\t\tClickCount,\n\t\t\t\t\t\t\tLastOpenDateKey,\n\t\t\t\t\t\t\tLastClickDateKey\n\t\t\t\t\t\t\t)\nSELECT\tfea.SiteId,\n\t\tfea.EmailId,\n\t\tfea.EmailRecurrenceId,\n\t\tdl.MemberId,\n\t\tCASE WHEN SUM(fea.OpenCount) > 0 OR SUM(fea.ClickCount) > 0 THEN 1 ELSE 0 END AS OpenCount,\n\t\tCASE WHEN SUM(fea.ClickCount) > 0 THEN 1 ELSE 0 END AS ClickCount,\n\t\tCASE \n\t\t\tWHEN \tMAX(CASE WHEN fea.OpenCount > 0 THEN DateKey ELSE 19000101 END) >= MAX(CASE WHEN fea.ClickCount > 0 THEN DateKey ELSE 19000101 END) \n\t\t\tTHEN \tMAX(CASE WHEN fea.OpenCount > 0 THEN DateKey ELSE NULL END)\n\t\t\tELSE \tMAX(CASE WHEN fea.ClickCount > 0 THEN DateKey ELSE NULL END) \n\t\tEND AS LastOpenDateKey,\n\t\tMAX(CASE WHEN fea.ClickCount > 0 THEN DateKey ELSE NULL END) AS LastClickDateKey\nFROM\t#DeliveryList dl\n\t\t\tJOIN \n\t\tdbo.FactEmailAction fea\n\t\t\tON dl.SiteId = fea.SiteId\n\t\t\t\tAND dl.EmailId = fea.EmailId\n\t\t\t\tAND dl.EmailRecurrenceId = fea.EmailRecurrenceId\n\t\t\t\tAND dl.ChildMemberId = fea.MemberId\nWHERE\t$partition.pf_FactEmailAction(fea.SiteId) = $partition.pf_FactEmailAction(@{item().SiteId})\n\t\tAND fea.DateKey >= 20170101\n\t\tAND (\n\t\t\tfea.OpenCount > 0\n\t\t\tOR fea.ClickCount > 0\n\t\t\t)\nGROUP\tBY fea.SiteId,\n\t\tfea.EmailId,\n\t\tfea.EmailRecurrenceId,\n\t\tdl.MemberId\n\nSELECT\tdl.SiteId,\n\t\tdl.MemberId,\n\t\tSUM(dl.DeliverCount) AS DeliverCount,\n\t\tISNULL(SUM(ocl.OpenCount),0) AS OpenCount,\n\t\tISNULL(SUM(ocl.ClickCount),0) AS ClickCount,\n\t\tMAX(ocl.LastOpenDateKey) AS LastOpenDateKey,\n\t\tMAX(ocl.LastClickDateKey) AS LastClickDateKey\nFROM\t#DeliveryList dl\n\t\t\tLEFT JOIN\n\t\t#OpenClickList ocl\n\t\t\tON dl.SiteId = ocl.SiteId\n\t\t\t\tAND dl.EmailId = ocl.Emailid\n\t\t\t\tAND dl.EmailRecurrenceid = ocl.EmailRecurrenceId\n\t\t\t\tAND dl.MemberId = ocl.MemberId\nGROUP\tBY dl.SiteId,\n\t\tdl.MemberId",
+										"type": "Expression"
+									},
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "SqlMISink"
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"mappings": [
+										{
+											"source": {
+												"name": "SiteId"
+											},
+											"sink": {
+												"name": "SiteId",
+												"type": "Int32"
+											}
+										},
+										{
+											"source": {
+												"name": "MemberId"
+											},
+											"sink": {
+												"name": "MemberId",
+												"type": "Int32"
+											}
+										},
+										{
+											"source": {
+												"name": "DeliverCount"
+											},
+											"sink": {
+												"name": "DeliverCount",
+												"type": "Int32"
+											}
+										},
+										{
+											"source": {
+												"name": "OpenCount"
+											},
+											"sink": {
+												"name": "OpenCount",
+												"type": "Int32"
+											}
+										},
+										{
+											"source": {
+												"name": "ClickCount"
+											},
+											"sink": {
+												"name": "ClickCount",
+												"type": "Int32"
+											}
+										},
+										{
+											"source": {
+												"name": "LastOpenDateKey"
+											},
+											"sink": {
+												"name": "LastOpenDateKey",
+												"type": "Int32"
+											}
+										},
+										{
+											"source": {
+												"name": "LastClickDateKey"
+											},
+											"sink": {
+												"name": "LastClickDateKey",
+												"type": "Int32"
+											}
+										}
+									]
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_MKSample_EmailData",
+									"type": "DatasetReference"
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_MKSampleEmailData2",
+									"type": "DatasetReference"
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2020-05-22T01:17:56Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

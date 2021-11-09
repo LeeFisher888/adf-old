@@ -1,0 +1,73 @@
+{
+	"name": "MKEmailData",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_ImodDW",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlMITable",
+		"schema": [
+			{
+				"name": "SiteId",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "SubCommunityId",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "EmailId",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "EmailRecurrenceId",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "MemberId",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "DeliverCount",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "OpenCount",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "ClickCount",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "DeliverDateKey",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "LastOpenDateKey",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "LastClickDateKey",
+				"type": "int",
+				"precision": 10
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "MKSampleEmailData"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

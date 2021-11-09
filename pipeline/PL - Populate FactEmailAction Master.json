@@ -1,0 +1,110 @@
+{
+	"name": "PL - Populate FactEmailAction Master",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get Site List",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlMISource",
+						"sqlReaderQuery": "SELECT\tds.SiteId\nFROM\tdbo.DimSite ds\nWHERE\tIsActive = 1\nORDER\tBY ds.SiteId",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_DimSite",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "Loop Through Sites",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get Site List",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get Site List').output.value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Execute Detail",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL - Populate FactEmailAction Detail",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"SiteId": {
+										"value": "@item().SiteId",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Send Failure Email",
+				"description": "Send Failure Email",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Loop Through Sites",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"url": "https://prod-08.eastus2.logic.azure.com:443/workflows/223f93ee2ab8417fa3e64f49a0559ee7/triggers/request/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Frequest%2Frun&sv=1.0&sig=Tdvydpd_wH-15KPWeXPS4W-JVm9Q5eefCQQhZJVJlBc",
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application\\json"
+					},
+					"body": {
+						"DataFactoryName": "@{pipeline().DataFactory}",
+						"PipelineName": "@{pipeline().Pipeline}",
+						"Subject": "An error has occurred!",
+						"ErrorMessage": "The ADF pipeline has crashed! Please check the logs.",
+						"EmailTo": "govermoyer@imodules.com;lfisher@imodules.com;echristiansen@imodules.com"
+					}
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2020-09-10T18:08:53Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

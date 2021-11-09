@@ -1,0 +1,293 @@
+{
+	"name": "PL - PostgresArchive - Actions",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get Actions Max Event_id",
+				"description": "",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlServerSource",
+						"sqlReaderQuery": {
+							"value": "select max(event_id) as MaxId from actions",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_UsEmRptArchive",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "Copy actions to staging table",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Get Actions Max Event_id",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Get Arch Events MaxId",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 2,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "PostgreSqlSource",
+						"query": {
+							"value": "SELECT \tactions.id,\n\t\tactions.date_added::timestamp,\n\t\tactions.action_type_id,\n\t\tactions.recipient_id,\n\t\tactions.message_id,\n\t\tactions.event_id,\n\t\tactions.link_id,\n\t\tevents.site_id,\n\t\tevents.sub_community_id,\n\t\tevents.event_time::timestamp\nFROM actions actions\n\tJOIN events events\n\t\tON actions.event_id = events.id\nWHERE actions.event_id >  @{activity('Get Actions Max Event_id').output.FirstRow.MaxId}\nand actions.event_id <= @{activity('Get Arch Events MaxId').output.FirstRow.MaxEventId}\nORDER BY actions.event_id\n",
+							"type": "Expression"
+						}
+					},
+					"sink": {
+						"type": "SqlServerSink",
+						"preCopyScript": "truncate table [dbo].[stage_actions]"
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "id",
+									"type": "Int64"
+								},
+								"sink": {
+									"name": "id",
+									"type": "Int64",
+									"physicalType": "bigint"
+								}
+							},
+							{
+								"source": {
+									"name": "date_added",
+									"type": "DateTime"
+								},
+								"sink": {
+									"name": "date_added",
+									"type": "DateTime",
+									"physicalType": "datetime2"
+								}
+							},
+							{
+								"source": {
+									"name": "action_type_id",
+									"type": "Int16"
+								},
+								"sink": {
+									"name": "action_type_id",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "recipient_id",
+									"type": "Int64"
+								},
+								"sink": {
+									"name": "recipient_id",
+									"type": "Int64",
+									"physicalType": "bigint"
+								}
+							},
+							{
+								"source": {
+									"name": "message_id",
+									"type": "Int64"
+								},
+								"sink": {
+									"name": "message_id",
+									"type": "Int64",
+									"physicalType": "bigint"
+								}
+							},
+							{
+								"source": {
+									"name": "event_id",
+									"type": "Int64"
+								},
+								"sink": {
+									"name": "event_id",
+									"type": "Int64",
+									"physicalType": "bigint"
+								}
+							},
+							{
+								"source": {
+									"name": "link_id",
+									"type": "Int64"
+								},
+								"sink": {
+									"name": "link_id",
+									"type": "Int64",
+									"physicalType": "bigint"
+								}
+							},
+							{
+								"source": {
+									"name": "site_id",
+									"type": "Int32"
+								},
+								"sink": {
+									"name": "site_id",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "sub_community_id",
+									"type": "Int32"
+								},
+								"sink": {
+									"name": "sub_community_id",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "event_time",
+									"type": "DateTime"
+								},
+								"sink": {
+									"name": "event_time",
+									"type": "DateTime",
+									"physicalType": "datetime2"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "DS_EmailReporting",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DS_UsEmRptArchive_actions",
+						"type": "DatasetReference"
+					}
+				]
+			},
+			{
+				"name": "usp_merge_actions",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Copy actions to staging table",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[dbo].[usp_merge_actions]"
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_EmRptArhive",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Truncate stage_actions",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "usp_merge_actions",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[dbo].[usp_trunacate_stage_actions]"
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_EmRptArhive",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Get Arch Events MaxId",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlServerSource",
+						"sqlReaderQuery": {
+							"value": "select max(id) as MaxEventId\nfrom events",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_UsEmRptArchive",
+						"type": "DatasetReference"
+					}
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2021-10-11T19:16:29Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

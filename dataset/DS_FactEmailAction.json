@@ -1,0 +1,13 @@
+{
+	"name": "DS_FactEmailAction",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_ImodDW",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlMITable",
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

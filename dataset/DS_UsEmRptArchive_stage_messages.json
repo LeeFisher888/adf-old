@@ -1,0 +1,106 @@
+{
+	"name": "DS_UsEmRptArchive_stage_messages",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_EmRptArhive",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "SqlServerTable",
+		"schema": [
+			{
+				"name": "pid",
+				"type": "bigint",
+				"precision": 19
+			},
+			{
+				"name": "id",
+				"type": "bigint",
+				"precision": 19
+			},
+			{
+				"name": "date_added",
+				"type": "datetime2",
+				"scale": 7
+			},
+			{
+				"name": "scheduled_date",
+				"type": "datetime2",
+				"scale": 7
+			},
+			{
+				"name": "email_name",
+				"type": "nvarchar"
+			},
+			{
+				"name": "from_name",
+				"type": "nvarchar"
+			},
+			{
+				"name": "from_address",
+				"type": "nvarchar"
+			},
+			{
+				"name": "subject_line",
+				"type": "nvarchar"
+			},
+			{
+				"name": "pre_header",
+				"type": "nvarchar"
+			},
+			{
+				"name": "category_name",
+				"type": "nvarchar"
+			},
+			{
+				"name": "site_id",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "sub_community_id",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "email_id",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "email_recurrence_id",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "actual_send_timestamp",
+				"type": "datetime2",
+				"scale": 7
+			},
+			{
+				"name": "sent_count",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "is_populated",
+				"type": "bit"
+			},
+			{
+				"name": "message_source",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "variant_set_id",
+				"type": "bigint",
+				"precision": 19
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "stage_messages"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

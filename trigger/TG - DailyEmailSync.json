@@ -1,0 +1,32 @@
+{
+	"name": "TG - DailyEmailSync",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "PL - Populate FactEmailAction Master",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Day",
+				"interval": 1,
+				"startTime": "2020-06-11T12:39:00Z",
+				"timeZone": "UTC",
+				"schedule": {
+					"minutes": [
+						15
+					],
+					"hours": [
+						6
+					]
+				}
+			}
+		}
+	}
+}
