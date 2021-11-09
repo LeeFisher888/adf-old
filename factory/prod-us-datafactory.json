@@ -1,9 +1,0 @@
-{
-	"name": "prod-us-datafactory",
-	"location": "eastus2",
-	"identity": {
-		"type": "SystemAssigned",
-		"principalId": "8c285541-9fc5-45c8-94f2-3b48e8eae5e8",
-		"tenantId": "d80d9582-63b9-45b0-a0c7-3b761365c2d3"
-	}
-}
